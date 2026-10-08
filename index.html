@@ -280,7 +280,10 @@ const MISSIONS = [
   goal:"파일 불러오기(File) 위젯으로 EQK.csv를 불러오고, 데이터가 몇 행·몇 열인지, 빠진 값은 없는지 확인합니다.",
   flow:[W("파일 불러오기","data",1)],
   steps:[
-    {t:"바탕화면의 오렌지 아이콘을 마우스 오른쪽 버튼으로 눌러 <span class=\"kbd\">관리자 권한으로 실행</span>한다.", sub:"나중에 지도(Geo) 기능을 설치할 때 관리자 권한이 필요하다."},
+    {t:"바탕화면의 오렌지 아이콘을 마우스 오른쪽 버튼으로 눌러 <span class=\"kbd\">관리자 권한으로 실행</span>한다.", sub:"바로 다음 단계에서 지도(Geo) 기능을 설치하는데, 관리자 권한이 있어야 설치된다."},
+    {t:"<b>지도 기능(Geo) 미리 설치하기:</b> 오렌지 메뉴에서 <span class=\"kbd\">Options</span> → <span class=\"kbd\">Add-ons…</span>를 연다.", sub:"07번 지도 미션에서 쓸 기능이라 처음에 미리 설치해 둔다.", img:"addon_menu", cap:"Add-ons 메뉴"},
+    {t:"목록에서 <b>Geo</b>를 체크하고 <span class=\"kbd\">OK</span>를 누른다.", img:"addon_dlg", cap:"Geo 설치 창"},
+    {t:"설치가 끝나면 오렌지를 <b>껐다가 다시 관리자 권한으로 실행</b>한다. 왼쪽 위젯 목록 맨 아래에 <b>Geo</b> 카테고리가 생겼는지 확인한다."},
     {t:"<b>데이터 (Data)</b> 카테고리의 <b>파일 불러오기 (File)</b> 위젯을 더블클릭해 캔버스에 추가하고, 캔버스의 파일 불러오기를 더블클릭해 연다.", sub:"'화면 보기' 캡처는 영어판 화면이라 위젯 이름이 영어로 보인다.", img:"file_add", cap:"파일 불러오기 위젯 추가하기"},
     {t:"폴더 버튼 <span class=\"kbd\">📁 …</span>을 눌러 EQK.csv를 불러온다."},
     {t:"<b>Info</b> 상자와 <b>Columns</b> 표를 살펴본다."},
@@ -395,9 +398,7 @@ const MISSIONS = [
   goal:"산점도로는 알아보기 어려웠던 위도·경도 데이터를 실제 지도 위에 올려, 어디에서 큰 지진이 일어났는지 찾아봅니다.",
   flow:[W("데이터 테이블","data"),W("Geo Map","geo",1),W("행 필터링","trans"),W("데이터 테이블 (1)","data"),W("Geo Map (1)","geo",1)],
   steps:[
-    {t:"오렌지 메뉴에서 <span class=\"kbd\">Options</span> → <span class=\"kbd\">Add-ons…</span>를 연다.", img:"addon_menu", cap:"Add-ons 메뉴"},
-    {t:"목록에서 <b>Geo</b>를 체크하고 <span class=\"kbd\">OK</span>를 누른다. 설치가 끝나면 오렌지를 다시 시작한다.", sub:"윈도에서는 오렌지를 관리자 권한으로 실행해야 설치된다.", img:"addon_dlg", cap:"Geo 설치 창"},
-    {t:"새로 생긴 <b>Geo</b> 카테고리의 <b>Geo Map</b> 위젯을 추가하고 <b>데이터 테이블</b>과 연결한다.", img:"geo_conn", cap:"데이터 테이블 → Geo Map 연결"},
+    {t:"01번 미션에서 설치한 <b>Geo</b> 카테고리의 <b>Geo Map</b> 위젯을 추가하고 <b>데이터 테이블</b>과 연결한다.", img:"geo_conn", cap:"데이터 테이블 → Geo Map 연결"},
     {t:"Geo Map을 열어 <span class=\"kbd\">Latitude</span>는 <b>위도</b>, <span class=\"kbd\">Longitude</span>는 <b>경도</b>, <span class=\"kbd\">Color</span>는 <b>규모</b>, <span class=\"kbd\">Size</span>는 <b>진앙(km)</b>으로 고른다.", img:"geo_panel", cap:"Geo Map 설정 화면"},
     {t:"지도를 확대·축소하며 큰 지진의 위치를 살펴본다."},
     {t:"규모가 큰 지진만 보기: <b>파일 불러오기 → 행 필터링</b>(규모 · 초과 (is greater than) · 3) → <b>데이터 테이블 (1)</b> → <b>Geo Map (1)</b>로 연결한다.", img:"geo_sr", cap:"행 필터링 조건 설정"},
@@ -461,7 +462,7 @@ function payload(){
     first:g.filter(q=>S.a[q.id]?.ok && S.a[q.id].tries===1).length,
     missions:MISSIONS.map(m=>{const s=missionStat(m); return [s.done,s.all];}), answers};
 }
-const qLabel = q => `${String(q.mi).padStart(2,"0")}-${q.no}`;
+const qLabel = q => `Q${String(q.mi).padStart(2,"0")}-${q.no}`; // 앞에 Q를 붙여 구글 시트가 날짜로 바꾸지 않게 함
 function cellOf(q,a){ if(graded(q)) return a?.ok?"O":a?.checked?"X":""; return String(a?.v??"").replace(/[\t\r\n]+/g," "); }
 
 function queueSync(){
