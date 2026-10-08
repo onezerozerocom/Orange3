@@ -201,6 +201,34 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--sunk)} tr.sel td{bac
 .resp li b{display:block;font-size:.78rem;color:var(--muted);font-weight:600}
 .detail{border:1px solid var(--accent);border-radius:var(--r);padding:14px;background:var(--surface);margin-top:12px}
 .detail h4{margin:0 0 8px;font-size:1rem}
+/* 문제 아래 설명 카드 */
+.note{border:1px dashed var(--quake);border-radius:var(--r);background:var(--surface);padding:16px;display:flex;flex-direction:column;gap:12px}
+.note h4{margin:0;font-size:1rem;color:var(--quake)}
+.note-lock{margin:0;color:var(--muted);font-size:.9rem}
+.rowtbl th{white-space:nowrap}
+.rowtbl td{font-family:var(--mono);font-size:.82rem;white-space:nowrap}
+.rowtbl .hot{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.cn{display:inline-block;min-width:1.4em;color:var(--accent);font-weight:700;margin-right:2px}
+.fig svg .ground{fill:var(--quake-soft)}
+.fig svg .strata{stroke:var(--line);stroke-dasharray:6 6}
+.fig svg .surface{stroke:var(--ink);stroke-width:2}
+.fig svg .wave{fill:none;stroke:var(--bad);stroke-width:1.5;opacity:.7}
+.fig svg .w2{opacity:.45} .fig svg .w3{opacity:.25}
+.fig svg .hypo{fill:var(--bad)}
+.fig svg .epi{fill:var(--accent)}
+.fig svg .depth{stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4}
+.fig svg .brace{fill:none;stroke:var(--accent);stroke-width:1.5}
+.fig svg .house path{fill:var(--surface);stroke:var(--ink);stroke-width:1.5}
+.fig svg .house .door{fill:var(--muted)}
+.fig svg .shake{fill:none;stroke:var(--warn);stroke-width:2}
+.fig svg .lbl{font-size:14px;font-weight:600}
+.fig svg .lbl-s{font-size:12px;fill:var(--muted)}
+.fig svg .lbl-hot{font-size:15px;font-weight:700;fill:var(--accent)}
+.cols{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:8px}
+.cols div{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--bg)}
+.cols div.hot{border-color:var(--accent);background:var(--accent-soft)}
+.cols dt{font-weight:700}
+.cols dd{margin:2px 0 0;font-size:.88rem;color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -628,7 +656,7 @@ function renderMission(){
   $("#main").innerHTML = `
     <div class="mission-head"><span class="eyebrow">${String(i).padStart(2,"0")} · ${m.phase}</span><h2>${m.title}</h2><p class="goal">${m.goal}</p>${flowHTML(m.flow)}</div>
     <section class="block"><h3><span class="tag">실습</span>오렌지에서 따라 하기</h3><ol class="steps">${steps}</ol></section>
-    <section class="block"><h3><span class="tag">문제</span>화면을 보고 답하기</h3><div class="qs">${m.qs.map(qHTML).join("")}</div></section>
+    <section class="block"><h3><span class="tag">문제</span>화면을 보고 답하기</h3><div class="qs">${m.qs.map(q=>qHTML(q)+noteHTML(q)).join("")}</div></section>
     ${pager(i)}`;
 }
 
@@ -642,6 +670,56 @@ function shortAns(q, a=S.a[q.id]){
   if(q.type==="multi") return (a.v||[]).map(i=>q.options[i]).join(", ");
   if(q.type==="match") return q.items.map((it,i)=>`${it.l}→${q.options[a.v[i]]??"?"}`).join(" ");
   return String(a.v);
+}
+
+/* ───────── 문제 아래 설명 카드 ───────── */
+const NOTES = {
+  "intro-1": { title:"첫 번째 행으로 속성 읽기", body: colsNote }
+};
+function noteHTML(q){
+  const n = NOTES[q.id]; if(!n) return "";
+  const a = S.a[q.id]||{};
+  const open = isDone(q) || a.revealed;
+  return `<section class="note" id="note-${q.id}">${open ? `<h4>${n.title}</h4>${n.body()}`
+    : `<p class="note-lock">🔒 1번 문제를 맞히면 각 열(속성)이 무엇을 뜻하는지 그림 설명이 열립니다.</p>`}</section>`;
+}
+function updateNote(q){
+  const el=document.getElementById("note-"+q.id); if(!el) return;
+  const tmp=document.createElement("div"); tmp.innerHTML=noteHTML(q); el.replaceWith(tmp.firstElementChild);
+}
+function colsNote(){
+  const cols=[
+    ["①","시간","2016-03-02 14:04:43"],["②","규모","2.7"],["③","진앙(km)","3"],
+    ["④","위도","36.35"],["⑤","경도","127.20"],["⑥","위치","충남 공주시 남동쪽 13km 지역"]];
+  const table=`<div class="tbl-wrap"><table class="rowtbl"><thead><tr>${cols.map(c=>`<th><span class="cn">${c[0]}</span>${c[1]}</th>`).join("")}</tr></thead>
+    <tbody><tr>${cols.map(c=>`<td class="${c[1]==="진앙(km)"?"hot":""}">${c[2]}</td>`).join("")}</tr></tbody></table></div>`;
+  const fig=`<div class="fig"><svg viewBox="0 0 640 320" role="img" aria-label="진원, 진앙, 깊이를 나타낸 땅 단면 그림">
+    <rect class="ground" x="20" y="96" width="600" height="206"/>
+    <line class="strata" x1="20" x2="620" y1="150" y2="150"/><line class="strata" x1="20" x2="620" y1="205" y2="205"/><line class="strata" x1="20" x2="620" y1="258" y2="258"/>
+    <line class="surface" x1="20" x2="620" y1="96" y2="96"/>
+    <text class="lbl-s" x="28" y="90">땅 표면</text><text class="lbl-s" x="28" y="292">땅속</text>
+    <circle class="wave" cx="200" cy="232" r="22"/><circle class="wave w2" cx="200" cy="232" r="44"/><circle class="wave w3" cx="200" cy="232" r="68"/>
+    <line class="depth" x1="200" x2="200" y1="100" y2="226"/>
+    <path class="brace" d="M214 100 h8 v126 h-8"/>
+    <text class="lbl-hot" x="232" y="150">깊이 3km</text>
+    <text class="lbl-s" x="232" y="168">→ 데이터의 ③ '진앙(km)' 값</text>
+    <circle class="hypo" cx="200" cy="232" r="9"/>
+    <text class="lbl" x="200" y="282" text-anchor="middle">진원: 땅속에서 지진이 시작된 곳</text>
+    <path class="epi" d="M200 82 l5 10 l11 1 l-8 7 l3 11 l-11 -6 l-11 6 l3 -11 l-8 -7 l11 -1z" transform="translate(0,-6)"/>
+    <text class="lbl" x="200" y="40" text-anchor="middle">진앙: 진원 바로 위 땅 표면</text>
+    <text class="lbl-s" x="200" y="58" text-anchor="middle">④ 위도 36.35° · ⑤ 경도 127.20°</text>
+    <text class="lbl" x="330" y="232">② 규모 2.7</text>
+    <text class="lbl-s" x="330" y="250">진원에서 나온 에너지의 크기</text>
+    <text class="lbl-s" x="612" y="314" text-anchor="end">※ 실제 거리 비율과 다릅니다</text>
+  </svg></div>`;
+  const dl=`<dl class="cols">
+    <div><dt><span class="cn">①</span>시간</dt><dd>지진이 일어난 날짜와 시각입니다.</dd></div>
+    <div><dt><span class="cn">②</span>규모</dt><dd>지진이 낸 <b>에너지의 크기</b>입니다. 지진 하나에 값이 하나뿐이고, 1 커지면 에너지는 약 32배가 됩니다.</dd></div>
+    <div class="hot"><dt><span class="cn">③</span>진앙(km)</dt><dd>열 이름은 '진앙'이지만, 값은 <b>진원의 깊이</b>입니다. 이 지진은 진앙 아래 <b>땅속 3km</b>에서 시작되었다는 뜻이에요. 값이 클수록 깊은 곳에서 일어난 지진입니다.</dd></div>
+    <div><dt><span class="cn">④⑤</span>위도 · 경도</dt><dd>진앙이 지도에서 어디인지 나타내는 좌표입니다. 위도는 남북, 경도는 동서 위치예요.</dd></div>
+    <div><dt><span class="cn">⑥</span>위치</dt><dd>진앙을 사람이 읽기 쉬운 말로 적은 것입니다. 숫자가 아니라 01번 미션에서 meta로 바꿉니다.</dd></div>
+  </dl>`;
+  return `<p class="goal" style="margin:0">EQK.csv의 첫 번째 행을 예로 각 열의 뜻을 살펴봅시다.</p>${table}${fig}${dl}`;
 }
 
 /* ───────── 교사용: 학생 결과 ───────── */
@@ -822,10 +900,10 @@ document.addEventListener("click",e=>{
   const gb=e.target.closest("[data-go]"); if(gb){ go(Number(gb.dataset.go)); return; }
   const b=e.target.closest("[data-act]"); if(!b) return;
   const act=b.dataset.act, q=b.dataset.q?qById(b.dataset.q):null;
-  if(act==="check"){ check(q); save(true); rerenderQ(q); renderNav(); }
+  if(act==="check"){ check(q); save(true); rerenderQ(q); updateNote(q); renderNav(); }
   else if(act==="save"){ read(q); S.a[q.id].saved=true; save(true); rerenderQ(q); renderNav(); }
   else if(act==="hint"){ const a=S.a[q.id]=S.a[q.id]||{}; read(q); a.showHint=!a.showHint; save(); rerenderQ(q); }
-  else if(act==="reveal"){ read(q); S.a[q.id].revealed=true; save(true); rerenderQ(q); }
+  else if(act==="reveal"){ read(q); S.a[q.id].revealed=true; save(true); rerenderQ(q); updateNote(q); }
   else if(act==="copy"){ copyWithFallback(reportText(), $("#copy-area"), "복사했습니다. 붙여 넣기(Ctrl+V)로 제출하세요."); }
   else if(act==="copytsv"){ copyWithFallback(tsvText(), $("#tsv-area"), "복사했습니다. 엑셀이나 구글 시트의 첫 칸을 누르고 붙여 넣으세요."); }
   else if(act==="askreset"){ $("#copy-area").innerHTML=`<div class="confirm" style="margin-top:10px">이 컴퓨터에 남은 학번·이름·답이 모두 지워집니다. (이미 선생님께 저장된 답은 그대로 남습니다.) 비울까요? <button class="btn" data-act="reset">네, 비우기</button><button class="btn ghost" data-act="cancelreset">취소</button></div>`; }
