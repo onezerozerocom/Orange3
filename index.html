@@ -430,8 +430,10 @@ const MISSIONS = [
 /* ───────── 상태 ───────── */
 const KEY = "orange3-eqk-v2";
 let S = {cur:0, steps:{}, a:{}, sid:"", sname:""};
-try{ const raw = localStorage.getItem(KEY); if(raw) S = Object.assign(S, JSON.parse(raw)); }catch(e){}
-function save(sync){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} if(sync) queueSync(); }
+// 답은 이 창(탭)에만 저장되고, 창을 닫으면 자동으로 사라집니다. (새로고침은 유지)
+try{ localStorage.removeItem(KEY); localStorage.removeItem(KEY+"-cid"); }catch(e){} // 예전 버전이 남긴 기록 지우기
+try{ const raw = sessionStorage.getItem(KEY); if(raw) S = Object.assign(S, JSON.parse(raw)); }catch(e){}
+function save(sync){ try{ sessionStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} if(sync) queueSync(); }
 
 /* ───────── 선생님께 저장 (구글 시트) ─────────
    SHEET_URL에 Apps Script 웹 앱 주소를 넣으면 학생 답이 구글 시트로 모입니다.
@@ -441,10 +443,10 @@ const SHEET_URL = "https://script.google.com/macros/s/AKfycbx-1aeOlkbslJJdllRhSh
 let VIEW="mission", SUBS=[], SEL=null, TEACHER_MODE=false, TPW="", tLoading=false, tTimer=null, tError="";
 let syncTimer=null, writing=false, lastSent="", fails=0;
 let CID=null;
-try{ CID=localStorage.getItem(KEY+"-cid"); }catch(e){}
+try{ CID=sessionStorage.getItem(KEY+"-cid"); }catch(e){}
 if(!CID){
   CID = (window.crypto && crypto.randomUUID) ? crypto.randomUUID().replace(/-/g,"") : (Date.now().toString(36)+Math.random().toString(36).slice(2,12));
-  try{ localStorage.setItem(KEY+"-cid",CID); }catch(e){}
+  try{ sessionStorage.setItem(KEY+"-cid",CID); }catch(e){}
 }
 try{ TPW=sessionStorage.getItem(KEY+"-tpw")||""; }catch(e){}
 
@@ -836,8 +838,8 @@ function renderShare(){
       <div class="tbl-wrap"><table><thead><tr><th>번호</th><th>문제</th><th>내 답</th><th>결과</th></tr></thead><tbody>${rows}</tbody></table></div>
     </section>
     <section class="block"><h3><span class="tag">제출</span>결과 제출하기</h3>
-      <p class="goal" style="margin:0 0 10px">위쪽에 <b>선생님께 저장됨</b>이 보이면 답이 이미 선생님에게 전달된 것입니다. 컴퓨터실처럼 다음 학생이 이 컴퓨터를 쓴다면, 끝난 뒤 <b>다음 학생을 위해 비우기</b>를 눌러 주세요. <b>이 기기에 저장</b>이 보이면 아래 버튼으로 결과를 복사해 선생님이 안내한 곳에 붙여 넣으세요.</p>
-      <div class="btns"><button class="btn primary" data-act="copy">결과 복사하기</button><button class="btn ghost" data-act="askreset">다음 학생을 위해 비우기</button></div>
+      <p class="goal" style="margin:0 0 10px">위쪽에 <b>선생님께 저장됨</b>이 보이면 답이 이미 선생님에게 전달된 것입니다. 창을 닫으면 이 컴퓨터에 남은 학번·이름·답은 자동으로 지워집니다. (선생님께 저장된 답은 그대로 남습니다.) <b>이 기기에 저장</b>이 보이면 아래 버튼으로 결과를 복사해 선생님이 안내한 곳에 붙여 넣으세요.</p>
+      <div class="btns"><button class="btn primary" data-act="copy">결과 복사하기</button></div>
       <div id="copy-area"></div>
     </section>
     ${pager(i)}`;
@@ -907,9 +909,6 @@ document.addEventListener("click",e=>{
   else if(act==="reveal"){ read(q); S.a[q.id].revealed=true; save(true); rerenderQ(q); updateNote(q); }
   else if(act==="copy"){ copyWithFallback(reportText(), $("#copy-area"), "복사했습니다. 붙여 넣기(Ctrl+V)로 제출하세요."); }
   else if(act==="copytsv"){ copyWithFallback(tsvText(), $("#tsv-area"), "복사했습니다. 엑셀이나 구글 시트의 첫 칸을 누르고 붙여 넣으세요."); }
-  else if(act==="askreset"){ $("#copy-area").innerHTML=`<div class="confirm" style="margin-top:10px">이 컴퓨터에 남은 학번·이름·답이 모두 지워집니다. (이미 선생님께 저장된 답은 그대로 남습니다.) 비울까요? <button class="btn" data-act="reset">네, 비우기</button><button class="btn ghost" data-act="cancelreset">취소</button></div>`; }
-  else if(act==="cancelreset"){ $("#copy-area").innerHTML=""; }
-  else if(act==="reset"){ clearTimeout(syncTimer); S={cur:0,steps:{},a:{},sid:"",sname:""}; lastSent=""; fails=0; CID=(window.crypto&&crypto.randomUUID)?crypto.randomUUID().replace(/-/g,""):(Date.now().toString(36)+Math.random().toString(36).slice(2,12)); try{ localStorage.setItem(KEY+"-cid",CID); }catch(err){} save(); $("#sid").value=""; $("#sname").value=""; setCloud("local"); go(0); }
   else if(act==="askdel"){ $("#del-area").innerHTML=`<span class="confirm">이 학생의 저장된 답이 모두 지워집니다. <button class="btn" data-act="del" data-sub="${esc(b.dataset.sub)}">삭제</button><button class="btn ghost" data-act="canceldel">취소</button></span>`; }
   else if(act==="canceldel"){ $("#del-area").innerHTML=""; }
   else if(act==="reload"){ loadSubs(); }
